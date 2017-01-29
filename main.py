@@ -36,47 +36,64 @@ page_footer = """
 </body>
 </html>
 """
+signup_header = "<h2>User Signup</h2>"
+
+info_form = """
+<form method="post">
+    <label>
+    Username:
+    <input type="text" name="name"/>
+    </label>
+    <br> <br>
+    <label>
+    Password:
+    <input type="password" name="password"/>
+    </label>
+    <br> <br>
+    <label>
+    Verify Password:
+    <input type="password" name="verify"/>
+    </label>
+    <br> <br>
+    <label>
+    Email(optional)
+    <input type="text" name="email"/>
+    </label>
+    <br> <br>
+    <input type="submit" value="Submit">
+</form>
+"""
+def valid_un(name):
+    for i in name:
+        if i == " ":
+            return False
+        else:
+            return True
+
+def valid_password(password, verify):
+    if password == verify:
+        return True
+    else:
+        return False
+
+def valid_email(email):
+    return True
 
 class Signup(webapp2.RequestHandler):
     def get(self):
 
-        signup_header = "<h2>User Signup</h2>"
-
-        info_form = """
-        <form method="post">
-            <label>
-            Username:
-            <input type="text" name="name"/>
-            </label>
-            <br> <br>
-            <label>
-            Password:
-            <input type="password" name="password"/>
-            </label>
-            <br> <br>
-            <label>
-            Verify Password:
-            <input type="password" name="verify"/>
-            </label>
-            <br> <br>
-            <label>
-            Email(optional)
-            <input type="text" name="email"/>
-            </label>
-            <br> <br>
-            <input type="submit" value="Submit">
-        </form>
-        """
         content = page_header + signup_header + info_form + page_footer
         self.response.write(content)
 
     def post(self):
         user_name = valid_un(self.request.get("name"))
         user_password = valid_password(self.request.get("password"))
-        user_validation = valid_password(self.request.get("verify"))
         user_email = valid_email(self.request.get("email"))
 
-        
+        if not (user_name and user_password and user_email):
+            self.response.write(info_form)
+        else:
+            self.response.write("Thanks!")
 
 app = webapp2.WSGIApplication([
     ('/', Signup)
