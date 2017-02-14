@@ -17,6 +17,7 @@
 import webapp2
 import re
 
+
 page_header = """
 <!DOCTYPE html>
 <html>
@@ -40,40 +41,48 @@ page_footer = """
 """
 signup_header = "<h2>User Signup</h2>"
 
-info_form = """
-<form method="post">
-    <label>
-    Username:
-    <input type="text" name="name"/>
-    <div class="error">{error_username}</div>
-    </label>
-    <br> <br>
-    <label>
-    Password:
-    <input type="password" name="password"/>
-    <div class="error">{error_password}</div}
-    </label>
-    <br> <br>
-    <label>
-    Verify Password:
-    <input type="password" name="verify"/>
-    <div class="error">{error_verify}</div>
-    </label>
-    <br> <br>
-    <label>
-    Email(optional)
-    <input type="text" name="email"/>
-    <div class="error">{error_email}</div>
-    </label>
-    <br> <br>
-    <input type="submit" value="Submit">
-</form>
-"""
+def build_form(error_username, error_password, error_verify, error_email):
+    info_form = """
+    <form action="/" method="post">
+        <label>
+        Username:
+        <input type="text" name="name"/>
+        <div class="error">%(error_username)s</div>
+        </label>
+        <br> <br>
+        <label>
+        Password:
+        <input type="password" name="password"/>
+        <div class="error">%(error_password)s</div>
+        </label>
+        <br> <br>
+        <label>
+        Verify Password:
+        <input type="password" name="verify"/>
+        <div class="error">%(error_verify)s</div>
+        </label>
+        <br> <br>
+        <label>
+        Email(optional):
+        <input type="text" name="email"/>
+        <div class="error">%(error_email)s</div>
+        </label>
+        <br> <br>
+        <input type="submit" value="Submit">
+    </form>
+    """
+    form_data = {
+    'error_email' : error_email,
+    'error_verify' : error_verify,
+    'error_username' : error_username,
+    'error_password' : error_password
+    }
+    html = info_form % form_data
+    return html
 
 def valid_un(name):
     USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-    return USER_RE.match(name)
-
+    return not not USER_RE.match(name)  # this is dumb
 
 def valid_match(password, verify):
     Password_RE = re.compile("^.{3,20}$")
@@ -84,28 +93,63 @@ def valid_password(password):
     return Password_RE.match(password)
 
 
-
 def valid_email(email):
     email_RE = re.compile("^[\S]+@[\S]+.[\S]+$")
     return email_RE.match(email)
 
 class Signup(webapp2.RequestHandler):
     def get(self):
-
-        content = page_header + signup_header + info_form + page_footer
+        content = page_header + signup_header + build_form(error_username="", error_password="", error_verify="", error_email="",) + page_footer
         self.response.write(content)
 
     def post(self):
-        user_name = valid_un(self.request.get("name"))
+        username = valid_un(self.request.get("name"))
         user_match = valid_match( self.request.get("password"), self.request.get("verify") )
         user_email = valid_email(self.request.get("email"))
         user_password = valid_password(self.request.get("password"))
+        name = self.request.get("name")
 
-        if not (user_name and user_password and user_email and user_match):
-            self.response.write(signup_header + info_form)
+        error_username = ""
+        if username:
+            error_username += ""
         else:
-            self.response.write("<div style='color:red;'>Thanks!</div>")
+            error_username += "That is not a valid username"
+
+        error_password = ""
+        if user_password:
+            error_password += ""
+        else:
+            error_password += "That is not a valid password"
+
+        error_verify = ""
+        if user_match:
+            error_verify += ""
+        else:
+            error_verify += "Your passwords do not match"
+
+        error_email = ""
+        if user_email:
+            error_email += ""
+        else:
+            error_email += "That is not a valid email"
+
+        if username and user_match and user_password and user_email:
+            self.redirect('/welcome?name=' + name)
+
+        else:
+            error_reply = build_form(error_username, error_password, error_verify, error_email)
+            self.response.write(page_header + signup_header + error_reply + page_footer)
+
+class Welcome(webapp2.RequestHandler):
+    def get(self):
+        username = self.request.get('name')
+        if valid_un(username):
+            self.response.write("Welcome " + username + "!")
+        else:
+            self.redirect('/Signup')
+
 
 app = webapp2.WSGIApplication([
-    ('/', Signup)
+    ('/', Signup),
+    ('/welcome', Welcome)
 ], debug=True)
