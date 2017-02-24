@@ -41,12 +41,12 @@ page_footer = """
 """
 signup_header = "<h2>User Signup</h2>"
 
-def build_form(error_username, error_password, error_verify, error_email):
+def build_form(username, myemail, error_username, error_password, error_verify, error_email):
     info_form = """
     <form action="/" method="post">
         <label>
         Username:
-        <input type="text" name="name"/>
+        <input type="text" name="name" value="%(username)s">
         <div class="error">%(error_username)s</div>
         </label>
         <br> <br>
@@ -64,7 +64,7 @@ def build_form(error_username, error_password, error_verify, error_email):
         <br> <br>
         <label>
         Email(optional):
-        <input type="text" name="email"/>
+        <input type="text" name="email" value="%(myemail)s">
         <div class="error">%(error_email)s</div>
         </label>
         <br> <br>
@@ -72,6 +72,8 @@ def build_form(error_username, error_password, error_verify, error_email):
     </form>
     """
     form_data = {
+    'username' : username,
+    'myemail' : myemail,
     'error_email' : error_email,
     'error_verify' : error_verify,
     'error_username' : error_username,
@@ -82,7 +84,7 @@ def build_form(error_username, error_password, error_verify, error_email):
 
 def valid_un(name):
     USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-    return not not USER_RE.match(name)  # this is dumb
+    return not not USER_RE.match(name)
 
 def valid_match(password, verify):
     Password_RE = re.compile("^.{3,20}$")
@@ -99,18 +101,20 @@ def valid_email(email):
 
 class Signup(webapp2.RequestHandler):
     def get(self):
-        content = page_header + signup_header + build_form(error_username="", error_password="", error_verify="", error_email="",) + page_footer
+        content = page_header + signup_header + build_form(username="", myemail="", error_username="", error_password="", error_verify="", error_email="") + page_footer
         self.response.write(content)
 
     def post(self):
-        username = valid_un(self.request.get("name"))
+        username1 = valid_un(self.request.get("name"))
         user_match = valid_match( self.request.get("password"), self.request.get("verify") )
         user_email = valid_email(self.request.get("email"))
         user_password = valid_password(self.request.get("password"))
         name = self.request.get("name")
+        email = self.request.get("email")
+        #username = self.request.get("name")
 
         error_username = ""
-        if username:
+        if username1:
             error_username += ""
         else:
             error_username += "That is not a valid username"
@@ -130,14 +134,17 @@ class Signup(webapp2.RequestHandler):
         error_email = ""
         if user_email:
             error_email += ""
+        elif email == "":
+            error_email += ""
+            user_email = True
         else:
             error_email += "That is not a valid email"
 
-        if username and user_match and user_password and user_email:
+        if username1 and user_match and user_password and user_email:
             self.redirect('/welcome?name=' + name)
 
         else:
-            error_reply = build_form(error_username, error_password, error_verify, error_email)
+            error_reply = build_form(name, email, error_username, error_password, error_verify, error_email)
             self.response.write(page_header + signup_header + error_reply + page_footer)
 
 class Welcome(webapp2.RequestHandler):
